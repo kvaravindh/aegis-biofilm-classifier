@@ -8,8 +8,8 @@
   --rule: #000000;
   --hair: #d9d9d9;
   --accent: #0070c0;              /* active section blue */
-  --bsub: #ff8ad8;  --bsub-fill: #ffe7f7;   /* B. subtilis pink */
-  --ecoli: #e8b64a; --ecoli-fill: #fff6e4;  /* E. coli yellow */
+  --bsub: #e8b64a;  --bsub-fill: #fff6e4;  /* B. subtilis yellow */
+  --ecoli: #ff8ad8; --ecoli-fill: #ffe7f7;  /* E. coli pink */
   --ovl: #12b2eb;   --ovl-fill: #dff5fd;    /* overlap / validation cyan */
   --dry: #f14124;   --dry-fill: #fcd9d3;    /* Dry Lab tag */
   --warn: #ff8021;  --warn-fill: #ffe6d3;   /* biofilm-thinning orange */
@@ -123,7 +123,7 @@ section { padding-block: 44px 20px; }
 .viewer .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
 .viewer canvas { display: block; width: 100%; height: auto; background: var(--drop); image-rendering: auto; }
 .mixkey { display: flex; align-items: center; gap: 10px; font-size: 13px; font-style: italic; color: var(--muted); margin-top: 8px; }
-.mixkey .grad { flex: 1; height: 10px; border: 1px solid var(--hair); background: linear-gradient(90deg, #ffc531, #f4f4f4, #ff5fc8); }
+.mixkey .grad { flex: 1; height: 10px; border: 1px solid var(--hair); background: linear-gradient(90deg, #ff5fc8, #f4f4f4, #ffc531); }
 .stats { display: grid; gap: 14px; }
 .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .stat { border: 1.5px solid; padding: 10px 12px; }
@@ -172,3 +172,6 @@ tr:last-child td { border-bottom: none; }
 .steps b { font-style: normal; }
 
 main.wrap { padding-bottom: 64px; }
+.tcard .fn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.tcard .fn span { min-width: 0; overflow-wrap: anywhere; }
+.rm { flex: 0 0 auto; font-size: 12.5px; color: var(--dry); }

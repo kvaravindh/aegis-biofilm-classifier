@@ -68,8 +68,8 @@
           </div>
         </details>
         <div class="legend">
-          <div><span class="sw" style="background:#ff5fc8;border-color:#ff5fc8"></span><span><b>B. subtilis</b>: local share ≥ 75%</span></div>
-          <div><span class="sw" style="background:#ffc531;border-color:#ffc531"></span><span><b>E. coli</b>: local share of B. sub ≤ 25%</span></div>
+          <div><span class="sw" style="background:#ffc531;border-color:#ffc531"></span><span><b>B. subtilis</b>: local share ≥ 75%</span></div>
+          <div><span class="sw" style="background:#ff5fc8;border-color:#ff5fc8"></span><span><b>E. coli</b>: local share of B. sub ≤ 25%</span></div>
           <div><span class="sw" style="background:#12b2eb;border-color:#12b2eb"></span><span><b>Overlap</b>: both present nearby</span></div>
           <div><span class="sw" style="background:transparent;border-color:var(--muted)"></span><span>Unstained background: excluded from all percentages</span></div>
         </div>
@@ -98,8 +98,9 @@
     <div class="opener"><span class="vb"></span><span class="num">3</span><h2>Training set</h2><p class="sub">Monoculture photos the model learns from. More fields, wells and days make a better model.</p></div>
     <ol class="steps">
       <li>Click <b>Add photos</b> under the right species. GitHub opens an upload page for that folder.</li>
-      <li>Drag in PNG or JPEG photos of <b>pure monoculture wells</b>, taken at the same zoom as your co-culture images, and click <b>Commit changes</b>.</li>
+      <li>Drag in PNG or JPEG photos of <b>pure monoculture wells</b>, taken at the same zoom as your co-culture images. You can drop many at once, up to 100 per upload. Then click <b>Commit changes</b>.</li>
       <li>The model retrains automatically. This page updates with the new model a few minutes later.</li>
+      <li>To take a photo out, click <b>Remove</b> under it and then <b>Commit changes</b> on GitHub. The model retrains without it.</li>
     </ol>
     <div class="cols">
       <div><div class="colhead b"><h3>B. subtilis NCIB 3610</h3><span class="n" id="nB"></span></div><div class="gallery" id="galB"></div><a class="btn primary addbtn" id="addB" target="_blank" rel="noopener">Add B. subtilis photos</a></div>
@@ -115,7 +116,7 @@
 "use strict";
 const MODEL = {{MODEL_HEADER}};
 const TRAINING = {{TRAINING_JSON}};
-const COL = { 1: [255, 95, 200], 2: [255, 197, 49], 3: [18, 178, 235] };
+const COL = { 1: [255, 197, 49], 2: [255, 95, 200], 3: [18, 178, 235] }; // 1 B. sub yellow, 2 E. coli pink, 3 overlap
 const MAX_PX = 3.2e6;
 const $ = (s) => document.querySelector(s);
 const fmt = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : "–");
@@ -159,7 +160,7 @@ function drawView(canvas, mode, d) {
     for (let i = 0; i < N; i++) {
       const L = labels[i], v = g[i]; let r, gg, b;
       if (L) {
-        const c = mode === "call" ? COL[L] : (fb[i] < 0.5 ? lerp([255, 197, 49], [244, 244, 244], fb[i] / 0.5) : lerp([244, 244, 244], [255, 95, 200], (fb[i] - 0.5) / 0.5));
+        const c = mode === "call" ? COL[L] : (fb[i] < 0.5 ? lerp([255, 95, 200], [244, 244, 244], fb[i] / 0.5) : lerp([244, 244, 244], [255, 197, 49], (fb[i] - 0.5) / 0.5));
         const a = mode === "call" ? 0.58 : 0.8; r = v * (1 - a) + c[0] * a; gg = v * (1 - a) + c[1] * a; b = v * (1 - a) + c[2] * a;
       } else { r = gg = b = v * 0.55 + 20; }
       o[4 * i] = r; o[4 * i + 1] = gg; o[4 * i + 2] = b; o[4 * i + 3] = 255;
@@ -302,7 +303,7 @@ drop.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
   for (const [sp, gal, n, add] of [["bsub", "#galB", "#nB", "#addB"], ["ecoli", "#galE", "#nE", "#addE"]]) {
     const photos = TRAINING.photos[sp] || [];
     $(n).textContent = `${photos.length} photo${photos.length === 1 ? "" : "s"}`;
-    $(gal).innerHTML = photos.length ? photos.map((p) => `<div class="tcard"><img src="${esc(p.thumb)}" alt="" loading="lazy"><div class="fn">${esc(p.name)}</div></div>`).join("")
+    $(gal).innerHTML = photos.length ? photos.map((p) => `<div class="tcard"><img src="${esc(p.thumb)}" alt="" loading="lazy"><div class="fn"><span>${esc(p.name)}</span><a class="rm" target="_blank" rel="noopener" href="https://github.com/${TRAINING.repo}/delete/${TRAINING.branch}/training/${sp}/${encodeURIComponent(p.name)}" title="Remove this photo from the training set on GitHub">Remove</a></div></div>`).join("")
       : `<p style="font-style:italic;color:var(--muted);font-size:14px;grid-column:1/-1">No photos yet.</p>`;
     $(add).href = TRAINING.repo ? `https://github.com/${TRAINING.repo}/upload/${TRAINING.branch}/training/${sp}` : "#";
   }

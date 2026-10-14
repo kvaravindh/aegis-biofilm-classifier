@@ -22,7 +22,7 @@ The model learns from monoculture photos in two folders:
 
 1. On the site, click **Add B. subtilis photos** or **Add E. coli photos**. You can also open the
    folder on GitHub and choose **Add file → Upload files**.
-2. Drag in PNG, JPEG or TIFF photos and click **Commit changes**.
+2. Drag in PNG, JPEG or TIFF photos (many at once is fine, up to 100 per upload) and click **Commit changes**.
 3. The **Retrain model and publish site** action runs automatically (Actions tab). After a few
    minutes, the site uses the new model.
 
@@ -45,8 +45,8 @@ Each run's summary page (Actions → the run) shows:
 - any photo scoring below 70%, which is usually a wrong label, blur or a different zoom;
 - any skipped photo.
 
-The same figures are saved in `model/metrics.json`. To remove a bad photo, delete it from the
-folder; the model retrains on the next commit.
+The same figures are saved in `model/metrics.json`. To remove a photo, click **Remove** under it on
+the site and commit on GitHub; the model retrains without it.
 
 ## How it works
 
