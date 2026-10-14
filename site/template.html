@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>AEGIS Biofilm Classifier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,14 +44,6 @@
         <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose co-culture images to analyse">
           <div class="big">Drop co-culture images here</div>
           <input type="file" id="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
-        </div>
-        <div class="examples">
-          <div class="label">Or try an example</div>
-          <div class="exrow">
-            <button class="ex" data-ex="mix"><img src="data:image/jpeg;base64,{{EX_MIX}}" alt=""><span>Spliced demo (45% B. sub area)</span></button>
-            <button class="ex" data-ex="bsub"><img src="data:image/jpeg;base64,{{EX_BSUB}}" alt=""><span>B. subtilis NCIB 3610 reference</span></button>
-            <button class="ex" data-ex="ecoli"><img src="data:image/jpeg;base64,{{EX_ECOLI}}" alt=""><span>E. coli MG1655 reference</span></button>
-          </div>
         </div>
       </div>
       <div class="settings">
@@ -182,7 +175,7 @@ function save(blob, name) {
 // ---------- results
 const results = [], list = $("#resultList");
 function emptyState(msg) { if (!list.children.length) list.innerHTML = `<div class="empty" id="empty">${msg}</div>`; }
-emptyState("Results appear here. The spliced demo is loading as an example.");
+emptyState("Results appear here.");
 function makeCard(name, example) {
   $("#empty")?.remove();
   const el = document.createElement("article"); el.className = "result";
@@ -303,9 +296,6 @@ file.addEventListener("change", () => { addFiles(file.files); file.value = ""; }
 ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
-function dataUrlBlob(u) { const [h, b] = u.split(","); return new Blob([b64ToBytes(b)], { type: h.slice(5).split(";")[0] }); }
-const EX = { mix: "spliced_demo.jpg", bsub: "bsub_NCIB3610_reference.jpg", ecoli: "ecoli_MG1655_reference.jpg" };
-document.querySelectorAll("[data-ex]").forEach((b) => b.addEventListener("click", () => { analyse(dataUrlBlob(b.querySelector("img").src), EX[b.dataset.ex], b.dataset.ex); $("#results").scrollIntoView(); }));
 
 // ---------- training set (photos live in the GitHub repo)
 (function training() {
@@ -325,7 +315,6 @@ document.querySelectorAll("[data-ex]").forEach((b) => b.addEventListener("click"
   secs.forEach((s) => s && io.observe(s));
 })();
 
-analyse(dataUrlBlob(document.querySelector('[data-ex="mix"] img').src), EX.mix, "mix");
 </script>
 </body>
 </html>

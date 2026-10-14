@@ -70,8 +70,7 @@ def main():
     assert "</script" not in engine
     t = (SITE / "template.html").read_text()
     rep = {"{{CSS}}": (SITE / "style.css").read_text(), "{{ENGINE}}": engine, "{{MODEL_B64}}": model_b64,
-           "{{MODEL_HEADER}}": json.dumps(model_hdr), "{{TRAINING_JSON}}": json.dumps(training).replace("</", "<\\/"),
-           "{{EX_MIX}}": b64("ex_mix.jpg"), "{{EX_BSUB}}": b64("ex_bsub.jpg"), "{{EX_ECOLI}}": b64("ex_ecoli.jpg")}
+           "{{MODEL_HEADER}}": json.dumps(model_hdr), "{{TRAINING_JSON}}": json.dumps(training).replace("</", "<\\/")}
     for k, v in rep.items():
         assert k in t, k
         t = t.replace(k, v)

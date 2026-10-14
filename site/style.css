@@ -19,24 +19,6 @@
   --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #111315; --ink: #eef0f2; --ink-2: #c9cdd2; --muted: #9aa0a6; --rule: #eef0f2; --hair: #33373c;
-    --accent: #4ea8ef;
-    --bsub: #ff8ad8; --bsub-fill: #3b1f35; --ecoli: #f0c25c; --ecoli-fill: #352c17;
-    --ovl: #3cc4f2; --ovl-fill: #0f3240; --dry: #ff6a52; --dry-fill: #3d1c17;
-    --warn: #ff9a4d; --warn-fill: #3a2414; --ok: #9be03d; --ok-fill: #223112; --drop: #181b1e;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #111315; --ink: #eef0f2; --ink-2: #c9cdd2; --muted: #9aa0a6; --rule: #eef0f2; --hair: #33373c;
-  --accent: #4ea8ef;
-  --bsub: #ff8ad8; --bsub-fill: #3b1f35; --ecoli: #f0c25c; --ecoli-fill: #352c17;
-  --ovl: #3cc4f2; --ovl-fill: #0f3240; --dry: #ff6a52; --dry-fill: #3d1c17;
-  --warn: #ff9a4d; --warn-fill: #3a2414; --ok: #9be03d; --ok-fill: #223112; --drop: #181b1e;
-  color-scheme: dark;
-}
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 64px; }
