@@ -1,0 +1,14 @@
+{
+ "method": "half-photo hold-out (add a second photo of each species for photo-level checks)",
+ "held_out_accuracy_bsub": 0.9156,
+ "held_out_accuracy_ecoli": 0.8312,
+ "tpr": 0.9156,
+ "fpr": 0.1688,
+ "photos": {
+  "bsub": 1,
+  "ecoli": 1
+ },
+ "per_photo_held_out": {},
+ "skipped": {},
+ "tree_nodes": 166192
+}

@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AEGIS Biofilm Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&display=swap">
+<style>
+{{CSS}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="running"><span>NUS-SPS iGEM 2026 · AEGIS</span><span class="bar" aria-hidden="true"></span></div>
+  <header class="hero">
+    <h1>Biofilm Species Classifier</h1>
+    <p class="lede">Upload a crystal-violet brightfield image of a <b>co-inoculated well</b>. The tool estimates how much of the biofilm is <b>B. subtilis</b>, how much is <b>E. coli</b>, and how much is <b>overlap</b>, where both species are intermixed.</p>
+    <div class="strainrow">
+      <span class="chip b">Bacillus subtilis NCIB 3610</span>
+      <span class="chip e">Escherichia coli MG1655</span>
+      <span class="chip o">Overlap (intermixed)</span>
+    </div>
+  </header>
+</div>
+
+<nav class="nav" aria-label="Sections">
+  <ul>
+    <li><a href="#analyse" class="on">Analyse</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#training">Training set</a></li>
+  </ul>
+</nav>
+
+<main class="wrap">
+
+  <section id="analyse">
+    <div class="opener"><span class="vb"></span><span class="num">1</span><h2>Analyse</h2><p class="sub">Drop in co-culture images. Each is processed in your browser and is not uploaded.</p></div>
+    <div class="analyse">
+      <div>
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose co-culture images to analyse">
+          <div class="big">Drop co-culture images here</div>
+          <input type="file" id="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+        </div>
+        <div class="examples">
+          <div class="label">Or try an example</div>
+          <div class="exrow">
+            <button class="ex" data-ex="mix"><img src="data:image/jpeg;base64,{{EX_MIX}}" alt=""><span>Spliced demo (45% B. sub area)</span></button>
+            <button class="ex" data-ex="bsub"><img src="data:image/jpeg;base64,{{EX_BSUB}}" alt=""><span>B. subtilis NCIB 3610 reference</span></button>
+            <button class="ex" data-ex="ecoli"><img src="data:image/jpeg;base64,{{EX_ECOLI}}" alt=""><span>E. coli MG1655 reference</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="settings">
+        <div class="field">
+          <label for="scale">Resize factor</label>
+          <input id="scale" type="number" min="0.1" max="4" step="0.05" value="1">
+          <p class="hint">Use 1 for images at the reference zoom (about 750–950 px across a field). If your camera saves at 2× the resolution, use 0.5.</p>
+        </div>
+        <details>
+          <summary style="cursor:pointer;font-weight:400">Overlap settings</summary>
+          <div class="settings" style="margin-top:12px">
+            <div class="field">
+              <label for="window">Neighbourhood radius (px)</label>
+              <input id="window" type="number" min="3" max="80" step="1" value="15">
+              <p class="hint">Overlap means both species are found within this distance of each other.</p>
+            </div>
+            <div class="field">
+              <label for="othr">Overlap threshold</label>
+              <input id="othr" type="number" min="0.05" max="0.45" step="0.05" value="0.25">
+              <p class="hint">A spot counts as overlap when its local B. subtilis share is between this value and 1 minus it.</p>
+            </div>
+          </div>
+        </details>
+        <div class="legend">
+          <div><span class="sw" style="background:#ff5fc8;border-color:#ff5fc8"></span><span><b>B. subtilis</b>: local share ≥ 75%</span></div>
+          <div><span class="sw" style="background:#ffc531;border-color:#ffc531"></span><span><b>E. coli</b>: local share of B. sub ≤ 25%</span></div>
+          <div><span class="sw" style="background:#12b2eb;border-color:#12b2eb"></span><span><b>Overlap</b>: both present nearby</span></div>
+          <div><span class="sw" style="background:transparent;border-color:var(--muted)"></span><span>Unstained background: excluded from all percentages</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="opener"><span class="vb"></span><span class="num">2</span><h2>Results</h2></div>
+    <div id="resultList"></div>
+    <div class="summary" id="summary" hidden>
+      <div class="label">All images</div>
+      <div class="tablewrap"><table id="sumTable"><thead><tr>
+        <th>Image</th><th>B. sub only %</th><th>E. coli only %</th><th>Overlap %</th><th>B. sub share %</th><th>E. coli share %</th><th>Biofilm cover %</th><th>Confidence</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn primary" id="dlCsv">Download CSV</button>
+        <button class="btn" id="cpCsv">Copy as CSV</button>
+        <button class="btn" id="clear">Clear results</button>
+        <span class="copied" id="cpMsg" hidden>Copied</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="training">
+    <div class="opener"><span class="vb"></span><span class="num">3</span><h2>Training set</h2><p class="sub">Monoculture photos the model learns from. More fields, wells and days make a better model.</p></div>
+    <ol class="steps">
+      <li>Click <b>Add photos</b> under the right species. GitHub opens an upload page for that folder.</li>
+      <li>Drag in PNG or JPEG photos of <b>pure monoculture wells</b>, taken at the same zoom as your co-culture images, and click <b>Commit changes</b>.</li>
+      <li>The model retrains automatically. This page updates with the new model a few minutes later.</li>
+    </ol>
+    <div class="cols">
+      <div><div class="colhead b"><h3>B. subtilis NCIB 3610</h3><span class="n" id="nB"></span></div><div class="gallery" id="galB"></div><a class="btn primary addbtn" id="addB" target="_blank" rel="noopener">Add B. subtilis photos</a></div>
+      <div><div class="colhead e"><h3>E. coli MG1655</h3><span class="n" id="nE"></span></div><div class="gallery" id="galE"></div><a class="btn primary addbtn" id="addE" target="_blank" rel="noopener">Add E. coli photos</a></div>
+    </div>
+  </section>
+
+</main>
+
+<script type="text/plain" id="engineSrc">{{ENGINE}}</script>
+<script type="application/octet-stream" id="modelB64">{{MODEL_B64}}</script>
+<script>
+"use strict";
+const MODEL = {{MODEL_HEADER}};
+const TRAINING = {{TRAINING_JSON}};
+const COL = { 1: [255, 95, 200], 2: [255, 197, 49], 3: [18, 178, 235] };
+const MAX_PX = 3.2e6;
+const $ = (s) => document.querySelector(s);
+const fmt = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : "–");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const b64ToBytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+
+// ---------- worker + model
+const worker = new Worker(URL.createObjectURL(new Blob([$("#engineSrc").textContent], { type: "text/javascript" })));
+const jobs = new Map(); let seq = 0;
+worker.onmessage = (e) => { const m = e.data, j = jobs.get(m.id); if (!j) return;
+  if (m.type === "progress") j.onp && j.onp(m.stage, m.f);
+  else { jobs.delete(m.id); m.type === "error" ? j.rej(new Error(m.message)) : j.res(m); } };
+const call = (msg, transfer = [], onp) => { const id = ++seq; return new Promise((res, rej) => { jobs.set(id, { res, rej, onp }); worker.postMessage({ ...msg, id }, transfer); }); };
+const modelReady = (async () => {
+  const gz = b64ToBytes($("#modelB64").textContent.trim());
+  const buf = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+  await call({ type: "setModel", key: "m", buffer: buf, header: MODEL.header, meta: MODEL.meta }, [buf]);
+})();
+
+// ---------- image helpers
+async function decode(blob) {
+  try { return await createImageBitmap(blob, { colorSpaceConversion: "none", premultiplyAlpha: "none" }); }
+  catch { try { return await createImageBitmap(blob); } catch { throw new Error("This file could not be read as an image. Use PNG or JPEG (convert TIFF or HEIC first)."); } }
+}
+function toPixels(bmp, scale) {
+  const W = Math.max(1, Math.round(bmp.width * scale)), H = Math.max(1, Math.round(bmp.height * scale));
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = scale !== 1; ctx.imageSmoothingQuality = "high"; ctx.drawImage(bmp, 0, 0, W, H);
+  return { W, H, data: new Uint8Array(ctx.getImageData(0, 0, W, H).data.buffer) };
+}
+function grayBase(rgba, N) { const g = new Uint8ClampedArray(N); for (let i = 0; i < N; i++) g[i] = 0.30 * rgba[4 * i] + 0.59 * rgba[4 * i + 1] + 0.11 * rgba[4 * i + 2]; return g; }
+function drawView(canvas, mode, d) {
+  const { W, H, rgba, labels, fb } = d, N = W * H;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d"), img = ctx.createImageData(W, H), o = img.data;
+  if (mode === "orig") { o.set(rgba); for (let i = 0; i < N; i++) o[4 * i + 3] = 255; }
+  else {
+    const g = d.gray || (d.gray = grayBase(rgba, N));
+    for (let i = 0; i < N; i++) {
+      const L = labels[i], v = g[i]; let r, gg, b;
+      if (L) {
+        const c = mode === "call" ? COL[L] : (fb[i] < 0.5 ? lerp([255, 197, 49], [244, 244, 244], fb[i] / 0.5) : lerp([244, 244, 244], [255, 95, 200], (fb[i] - 0.5) / 0.5));
+        const a = mode === "call" ? 0.58 : 0.8; r = v * (1 - a) + c[0] * a; gg = v * (1 - a) + c[1] * a; b = v * (1 - a) + c[2] * a;
+      } else { r = gg = b = v * 0.55 + 20; }
+      o[4 * i] = r; o[4 * i + 1] = gg; o[4 * i + 2] = b; o[4 * i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+function save(blob, name) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+// ---------- results
+const results = [], list = $("#resultList");
+function emptyState(msg) { if (!list.children.length) list.innerHTML = `<div class="empty" id="empty">${msg}</div>`; }
+emptyState("Results appear here. The spliced demo is loading as an example.");
+function makeCard(name, example) {
+  $("#empty")?.remove();
+  const el = document.createElement("article"); el.className = "result";
+  el.innerHTML = `<div class="rhead"><h3>${esc(name)}${example ? '<span class="example-flag">Example</span>' : ""}</h3><span class="meta"></span></div>
+    <div class="progress"><div class="track"><div class="fill"></div></div><div class="what">Waiting…</div></div>`;
+  list.prepend(el); return el;
+}
+function fillCard(el, d) {
+  const s = d.stats, warn = [];
+  if (s.mean_confidence < 0.45) warn.push(`<div class="box orange">Low classifier confidence. This image may differ from the training photos in zoom, focus or staining.</div>`);
+  if (Math.max(d.W, d.H) > 1700) warn.push(`<div class="box orange">This image is ${d.W} × ${d.H} px, much larger than the training photos (~750–950 px across). If it was taken at the same zoom, try a resize factor near ${fmt(900 / Math.max(d.W, d.H) * d.scale, 2)}.</div>`);
+  if (s.biomass_area_pct_of_image < 10) warn.push(`<div class="box orange">Only ${fmt(s.biomass_area_pct_of_image)}% of the field is stained biofilm, so percentages rest on few pixels.</div>`);
+  if (d.example === "mix") warn.push(`<div class="box cyan">This demo is spliced from the two reference photos, which are in the training set, so it scores better than a real co-culture would. True B. subtilis area is 45%.</div>`);
+  if (d.example === "bsub" || d.example === "ecoli") warn.push(`<div class="box cyan">This is a training photo, shown to illustrate the output; its score is not a test result.</div>`);
+  el.querySelector(".meta").textContent = `${d.W} × ${d.H} px · ${fmt(d.ms / 1000, 1)} s`;
+  el.querySelector(".progress").remove();
+  const body = document.createElement("div"); body.className = "rgrid";
+  body.innerHTML = `
+    <div class="viewer">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-v="call">Call</button>
+        <button role="tab" aria-selected="false" data-v="mix">Local mix</button>
+        <button role="tab" aria-selected="false" data-v="orig">Original</button>
+      </div>
+      <canvas aria-label="Classification overlay"></canvas>
+      <div class="mixkey" hidden><span>E. coli</span><span class="grad"></span><span>B. subtilis</span></div>
+    </div>
+    <div class="stats">
+      <div class="three">
+        <div class="stat b"><div class="k">B. subtilis only</div><div class="v">${fmt(s.bsub_only_pct)}%</div></div>
+        <div class="stat e"><div class="k">E. coli only</div><div class="v">${fmt(s.ecoli_only_pct)}%</div></div>
+        <div class="stat o"><div class="k">Overlap</div><div class="v">${fmt(s.overlap_pct)}%</div></div>
+      </div>
+      <div class="comp">
+        <div class="k"><span><b>Overall composition</b></span><span>B. sub ${fmt(s.bsub_total_pct)}% · E. coli ${fmt(s.ecoli_total_pct)}%</span></div>
+        <div class="compbar" aria-hidden="true"><i style="width:${s.bsub_total_pct}%;background:var(--bsub)"></i><i style="flex:1;background:var(--ecoli)"></i></div>
+      </div>
+      <dl class="facts">
+        <dt>Biofilm cover</dt><dd>${fmt(s.biomass_area_pct_of_image)}% of field</dd>
+        <dt>Stain-weighted share</dt><dd>B. sub ${fmt(s.bsub_total_pct_stain_weighted)}% · E. coli ${fmt(s.ecoli_total_pct_stain_weighted)}%</dd>
+        <dt>Confidence</dt><dd>${fmt(s.mean_confidence, 2)}</dd>
+        <dt>Settings</dt><dd>resize ${d.scale} · radius ${d.opts.window} px · threshold ${d.opts.overlap_thr}</dd>
+      </dl>
+      ${warn.length ? `<div class="notes">${warn.join("")}</div>` : ""}
+      <div class="actions"><button class="btn" data-dl="overlay">Save overlay PNG</button><button class="btn" data-dl="labels">Save label mask PNG</button></div>
+    </div>`;
+  el.appendChild(body);
+  const cv = body.querySelector("canvas"), key = body.querySelector(".mixkey");
+  drawView(cv, "call", d);
+  body.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+    body.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    drawView(cv, b.dataset.v, d); key.hidden = b.dataset.v !== "mix";
+  }));
+  const stem = d.name.replace(/\.[^.]+$/, "");
+  body.querySelector('[data-dl="overlay"]').addEventListener("click", () => { const c = document.createElement("canvas"); drawView(c, "call", d); c.toBlob((b) => save(b, `${stem}_overlay.png`)); });
+  body.querySelector('[data-dl="labels"]').addEventListener("click", () => {
+    // grey PNG: 0 background, 80 B. sub, 160 E. coli, 240 overlap
+    const c = document.createElement("canvas"); c.width = d.W; c.height = d.H;
+    const ctx = c.getContext("2d"), im = ctx.createImageData(d.W, d.H);
+    for (let i = 0; i < d.W * d.H; i++) { const v = d.labels[i] * 80; im.data[4 * i] = im.data[4 * i + 1] = im.data[4 * i + 2] = v; im.data[4 * i + 3] = 255; }
+    ctx.putImageData(im, 0, 0); c.toBlob((b) => save(b, `${stem}_labels_x80.png`));
+  });
+}
+function readOpts() {
+  const num = (id, d, lo, hi) => { const v = parseFloat(document.getElementById(id).value); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
+  return { scale: num("scale", 1, 0.1, 4), opts: { window: Math.round(num("window", 15, 3, 80)), overlap_thr: num("othr", 0.25, 0.05, 0.45) } };
+}
+let queue = Promise.resolve();
+function analyse(blob, name, example) {
+  const el = makeCard(name, example), fill = el.querySelector(".fill"), what = el.querySelector(".what");
+  const stages = ["Stain map", "Biofilm mask", "Morphology features", "Classifying pixels", "Local mix & overlap"], wts = [0.02, 0.03, 0.55, 0.35, 0.05];
+  const { scale, opts } = readOpts();
+  queue = queue.then(async () => {
+    try {
+      what.textContent = "Loading model…";
+      await modelReady;
+      const bmp = await decode(blob);
+      if (bmp.width * bmp.height * scale * scale > MAX_PX) throw new Error(`This image is ${bmp.width} × ${bmp.height} px, too large to analyse in the browser. Set the resize factor to ${Math.sqrt(MAX_PX / (bmp.width * bmp.height)).toFixed(2)} or lower and add it again.`);
+      const px = toPixels(bmp, scale);
+      const m = await call({ type: "run", key: "m", rgba: px.data.slice(0), H: px.H, W: px.W, opts }, [], (stage, f) => {
+        const k = stages.indexOf(stage); let p = 0; for (let i = 0; i < k; i++) p += wts[i]; p += (wts[k] || 0) * f;
+        fill.style.width = `${Math.round(p * 100)}%`; what.textContent = `${stage}…`;
+      });
+      const d = { name, example, W: px.W, H: px.H, rgba: px.data, labels: m.labels, fb: m.fb, stats: m.stats, ms: m.ms, scale, opts };
+      fillCard(el, d); results.push(d); renderSummary();
+    } catch (err) {
+      el.querySelector(".progress")?.remove();
+      const b = document.createElement("div"); b.className = "box red"; b.textContent = err.message || String(err); el.appendChild(b);
+    }
+  });
+}
+const CSV_COLS = ["image", "bsub_only_pct", "ecoli_only_pct", "overlap_pct", "bsub_total_pct", "ecoli_total_pct", "bsub_total_pct_stain_weighted", "ecoli_total_pct_stain_weighted", "biomass_area_pct_of_image", "mean_confidence", "resize_factor", "window_px", "overlap_thr"];
+function csv() {
+  const rows = [CSV_COLS.join(",")];
+  for (const r of results) { const s = r.stats; rows.push([`"${r.name.replace(/"/g, '""')}"`, ...CSV_COLS.slice(1, 10).map((k) => fmt(s[k], k === "mean_confidence" ? 3 : 2)), r.scale, r.opts.window, r.opts.overlap_thr].join(",")); }
+  return rows.join("\n") + "\n";
+}
+function renderSummary() {
+  $("#summary").hidden = results.length === 0;
+  $("#sumTable tbody").innerHTML = results.map((r) => { const s = r.stats;
+    return `<tr><td>${esc(r.name)}</td><td>${fmt(s.bsub_only_pct)}</td><td>${fmt(s.ecoli_only_pct)}</td><td>${fmt(s.overlap_pct)}</td><td>${fmt(s.bsub_total_pct)}</td><td>${fmt(s.ecoli_total_pct)}</td><td>${fmt(s.biomass_area_pct_of_image)}</td><td>${fmt(s.mean_confidence, 2)}</td></tr>`; }).join("");
+}
+$("#dlCsv").addEventListener("click", () => save(new Blob([csv()], { type: "text/csv" }), "biofilm_results.csv"));
+$("#cpCsv").addEventListener("click", async () => {
+  const msg = $("#cpMsg");
+  try { await navigator.clipboard.writeText(csv()); msg.textContent = "Copied"; } catch { msg.textContent = "Copy was blocked. Use Download CSV instead."; }
+  msg.hidden = false; setTimeout(() => (msg.hidden = true), 2500);
+});
+$("#clear").addEventListener("click", () => { results.length = 0; list.innerHTML = ""; renderSummary(); emptyState("Results appear here."); });
+
+// ---------- inputs
+const drop = $("#drop"), file = $("#file");
+const isImg = (f) => /^image\/(png|jpeg|webp)$/.test(f.type) || /\.(png|jpe?g|webp)$/i.test(f.name);
+function addFiles(files) { const imgs = [...files].filter(isImg); if (!imgs.length) return; imgs.forEach((f) => analyse(f, f.name, null)); $("#results").scrollIntoView(); }
+drop.addEventListener("click", () => file.click());
+drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); file.click(); } });
+file.addEventListener("change", () => { addFiles(file.files); file.value = ""; });
+["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
+function dataUrlBlob(u) { const [h, b] = u.split(","); return new Blob([b64ToBytes(b)], { type: h.slice(5).split(";")[0] }); }
+const EX = { mix: "spliced_demo.jpg", bsub: "bsub_NCIB3610_reference.jpg", ecoli: "ecoli_MG1655_reference.jpg" };
+document.querySelectorAll("[data-ex]").forEach((b) => b.addEventListener("click", () => { analyse(dataUrlBlob(b.querySelector("img").src), EX[b.dataset.ex], b.dataset.ex); $("#results").scrollIntoView(); }));
+
+// ---------- training set (photos live in the GitHub repo)
+(function training() {
+  for (const [sp, gal, n, add] of [["bsub", "#galB", "#nB", "#addB"], ["ecoli", "#galE", "#nE", "#addE"]]) {
+    const photos = TRAINING.photos[sp] || [];
+    $(n).textContent = `${photos.length} photo${photos.length === 1 ? "" : "s"}`;
+    $(gal).innerHTML = photos.length ? photos.map((p) => `<div class="tcard"><img src="${esc(p.thumb)}" alt="" loading="lazy"><div class="fn">${esc(p.name)}</div></div>`).join("")
+      : `<p style="font-style:italic;color:var(--muted);font-size:14px;grid-column:1/-1">No photos yet.</p>`;
+    $(add).href = TRAINING.repo ? `https://github.com/${TRAINING.repo}/upload/${TRAINING.branch}/training/${sp}` : "#";
+  }
+})();
+
+// ---------- section bar follows scroll
+(function () {
+  const links = [...document.querySelectorAll(".nav a")], secs = links.map((a) => document.querySelector(a.getAttribute("href")));
+  const io = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-40% 0px -55% 0px" });
+  secs.forEach((s) => s && io.observe(s));
+})();
+
+analyse(dataUrlBlob(document.querySelector('[data-ex="mix"] img').src), EX.mix, "mix");
+</script>
+</body>
+</html>
